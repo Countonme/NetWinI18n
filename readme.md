@@ -1,5 +1,5 @@
 # NetWinI18n
-
+![alt text](28f5cca959a2697c9842a3a12499f002.png)
 **A Lightweight JSON-Based Localization Library for Windows Forms**
 
 NetWinI18n is a lightweight multilingual localization library for C# Windows Forms applications. It uses JSON language files, supports runtime language switching, and provides a simple API for translating forms, controls, menus, and other UI elements.
