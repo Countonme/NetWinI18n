@@ -1,4 +1,7 @@
 ﻿using System;
+using System.IO;
+using System.Linq;
+using System.Reflection;
 
 namespace NetWinI18n
 {
@@ -7,8 +10,7 @@ namespace NetWinI18n
         /// <summary>
         /// 当前语言。
         /// </summary>
-        public static string CurrentLanguage =>
-            LocalizationManager.CurrentLanguage;
+        public static string CurrentLanguage => LocalizationManager.CurrentLanguage;
 
         /// <summary>
         /// 默认语言。
@@ -75,6 +77,71 @@ namespace NetWinI18n
             catch (FormatException)
             {
                 return text;
+            }
+        }
+
+        /// <summary>
+        /// 初始化外部语言文件。
+        /// 将 DLL 内嵌的 JSON 文件复制到程序目录 Languages 文件夹。
+        /// 已存在的文件不会被覆盖。
+        /// </summary>
+        public static void InitializeLanguageFiles()
+        {
+            string languageDirectory = Path.Combine(
+                AppDomain.CurrentDomain.BaseDirectory,
+                "Languages");
+
+            if (!Directory.Exists(languageDirectory))
+            {
+                Directory.CreateDirectory(languageDirectory);
+            }
+
+            Assembly assembly = typeof(Lang).Assembly;
+
+            string[] resources = assembly.GetManifestResourceNames()
+                .Where(name =>
+                    name.EndsWith(".json", StringComparison.OrdinalIgnoreCase) &&
+                    name.Contains(".Languages."))
+                .ToArray();
+
+            foreach (string resourceName in resources)
+            {
+                string fileName = resourceName.Substring(
+                    resourceName.LastIndexOf('.') - 0);
+
+                // 从资源名中提取语言代码，例如 zh-CN.json。
+                // 假设资源名格式为 NetWinI18n.Languages.zh-CN.json。
+                const string marker = ".Languages.";
+                int index = resourceName.IndexOf(
+                    marker,
+                    StringComparison.OrdinalIgnoreCase);
+
+                if (index < 0)
+                    continue;
+
+                fileName = resourceName.Substring(index + marker.Length);
+
+                string destinationPath = Path.Combine(
+                    languageDirectory,
+                    fileName);
+
+                if (File.Exists(destinationPath))
+                    continue;
+
+                using (Stream stream = assembly.GetManifestResourceStream(resourceName))
+                {
+                    if (stream == null)
+                        continue;
+
+                    using (FileStream file = new FileStream(
+                        destinationPath,
+                        FileMode.CreateNew,
+                        FileAccess.Write,
+                        FileShare.None))
+                    {
+                        stream.CopyTo(file);
+                    }
+                }
             }
         }
     }
