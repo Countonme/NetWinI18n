@@ -65,16 +65,20 @@
   <ItemGroup Condition="'$(TargetFramework)' == 'net45' Or '$(TargetFramework)' == 'net46' Or '$(TargetFramework)' == 'net472' Or '$(TargetFramework)' == 'net48'">
     <Reference Include="System.Windows.Forms" />
   </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Remove="Languages\de-DE.json" />
+    <EmbeddedResource Remove="Languages\fr-FR.json" />
+    <EmbeddedResource Remove="Languages\id-ID.json" />
+    <EmbeddedResource Remove="Languages\it-IT.json" />
+    <EmbeddedResource Remove="Languages\pt-BR.json" />
+    <EmbeddedResource Remove="Languages\pt-PT.json" />
+  </ItemGroup>
 
   <!-- Include README and LICENSE in NuGet package -->
 <ItemGroup>
-    <None Include="README.md"
-          Pack="true"
-          PackagePath="README.md" />
+    <None Include="README.md" Pack="true" PackagePath="README.md" />
 
-    <None Include="LICENSE"
-          Pack="true"
-          PackagePath="LICENSE" />
+    <None Include="LICENSE" Pack="true" PackagePath="LICENSE" />
 </ItemGroup>
 
 </Project>

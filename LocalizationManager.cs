@@ -270,8 +270,7 @@ namespace NetWinI18n
         /// </summary>
         private static Dictionary<string, string> CreateEmptyDictionary()
         {
-            return new Dictionary<string, string>(
-                StringComparer.OrdinalIgnoreCase);
+            return new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         }
 
         /// <summary>
@@ -280,17 +279,14 @@ namespace NetWinI18n
         /// </summary>
         public static List<string> GetAvailableLanguages()
         {
-            HashSet<string> languages =
-                new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            HashSet<string> languages = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
             // 1. 扫描外部 Languages 目录
             string directory = _languageDirectory;
 
-            if (!string.IsNullOrWhiteSpace(directory) &&
-                Directory.Exists(directory))
+            if (!string.IsNullOrWhiteSpace(directory) && Directory.Exists(directory))
             {
-                foreach (string file in Directory.GetFiles(
-                    directory, "*.json", SearchOption.TopDirectoryOnly))
+                foreach (string file in Directory.GetFiles(directory, "*.json", SearchOption.TopDirectoryOnly))
                 {
                     string code = Path.GetFileNameWithoutExtension(file);
 
@@ -306,17 +302,12 @@ namespace NetWinI18n
             {
                 const string prefix = "NetWinI18n.Languages.";
 
-                if (!resourceName.StartsWith(
-                    prefix, StringComparison.OrdinalIgnoreCase) ||
-                    !resourceName.EndsWith(
-                    ".json", StringComparison.OrdinalIgnoreCase))
+                if (!resourceName.StartsWith(prefix, StringComparison.OrdinalIgnoreCase) || !resourceName.EndsWith(".json", StringComparison.OrdinalIgnoreCase))
                 {
                     continue;
                 }
 
-                string code = resourceName.Substring(
-                    prefix.Length,
-                    resourceName.Length - prefix.Length - 5);
+                string code = resourceName.Substring(prefix.Length, resourceName.Length - prefix.Length - 5);
 
                 if (IsValidLanguageCode(code))
                     languages.Add(code);
@@ -328,6 +319,11 @@ namespace NetWinI18n
             return result;
         }
 
+        /// <summary>
+        /// IsValidLanguageCode
+        /// </summary>
+        /// <param name="code"></param>
+        /// <returns></returns>
         private static bool IsValidLanguageCode(string code)
         {
             if (string.IsNullOrWhiteSpace(code))
@@ -341,6 +337,18 @@ namespace NetWinI18n
             catch (CultureNotFoundException)
             {
                 return false;
+            }
+        }
+
+        /// <summary>
+        /// 刷新所有语言缓存。
+        /// 修改外部 JSON 文件后调用。
+        /// </summary>
+        public static void RefreshLanguageCache()
+        {
+            lock (SyncRoot)
+            {
+                Cache.Clear();
             }
         }
     }

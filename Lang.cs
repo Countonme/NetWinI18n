@@ -2,6 +2,8 @@
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Globalization;
+using System.Collections.Generic;
 
 namespace NetWinI18n
 {
@@ -10,15 +12,18 @@ namespace NetWinI18n
         /// <summary>
         /// 当前语言。
         /// </summary>
-        public static string CurrentLanguage => LocalizationManager.CurrentLanguage;
+        public static string CurrentLanguage
+        {
+            get { return LocalizationManager.CurrentLanguage; }
+        }
 
         /// <summary>
         /// 默认语言。
         /// </summary>
         public static string DefaultLanguage
         {
-            get => LocalizationManager.DefaultLanguage;
-            set => LocalizationManager.DefaultLanguage = value;
+            get { return LocalizationManager.DefaultLanguage; }
+            set { LocalizationManager.DefaultLanguage = value; }
         }
 
         /// <summary>
@@ -26,12 +31,12 @@ namespace NetWinI18n
         /// </summary>
         public static event EventHandler LanguageChanged
         {
-            add => LocalizationManager.LanguageChanged += value;
-            remove => LocalizationManager.LanguageChanged -= value;
+            add { LocalizationManager.LanguageChanged += value; }
+            remove { LocalizationManager.LanguageChanged -= value; }
         }
 
         /// <summary>
-        /// 设置当前语言，例如 zh-CN、en-US、vi-VN。
+        /// 设置当前语言。
         /// </summary>
         public static void SetLanguage(string language)
         {
@@ -40,7 +45,6 @@ namespace NetWinI18n
 
         /// <summary>
         /// 设置外部 JSON 文件目录。
-        /// 例如：Application.StartupPath/Languages。
         /// </summary>
         public static void SetLanguageDirectory(string directory)
         {
@@ -49,7 +53,6 @@ namespace NetWinI18n
 
         /// <summary>
         /// 根据 Key 获取翻译文本。
-        /// 如果找不到翻译，返回 Key。
         /// </summary>
         public static string T(string key)
         {
@@ -58,7 +61,6 @@ namespace NetWinI18n
 
         /// <summary>
         /// 获取带格式参数的翻译文本。
-        /// 例如：Lang.T("Welcome.User", "Tom")。
         /// </summary>
         public static string T(string key, params object[] args)
         {
@@ -69,10 +71,7 @@ namespace NetWinI18n
 
             try
             {
-                return string.Format(
-                    System.Globalization.CultureInfo.CurrentCulture,
-                    text,
-                    args);
+                return string.Format(CultureInfo.CurrentCulture, text, args);
             }
             catch (FormatException)
             {
@@ -81,49 +80,34 @@ namespace NetWinI18n
         }
 
         /// <summary>
-        /// 初始化外部语言文件。
-        /// 将 DLL 内嵌的 JSON 文件复制到程序目录 Languages 文件夹。
-        /// 已存在的文件不会被覆盖。
+        /// 初始化语言文件。
+        /// 创建 Languages 目录，将 DLL 内嵌 JSON 复制到外部目录。
+        /// 已存在的 JSON 不覆盖。
+        /// 同时注册外部语言目录。
         /// </summary>
         public static void InitializeLanguageFiles()
         {
-            string languageDirectory = Path.Combine(
-                AppDomain.CurrentDomain.BaseDirectory,
-                "Languages");
+            string languageDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Languages");
 
             if (!Directory.Exists(languageDirectory))
-            {
                 Directory.CreateDirectory(languageDirectory);
-            }
 
             Assembly assembly = typeof(Lang).Assembly;
 
-            string[] resources = assembly.GetManifestResourceNames()
-                .Where(name =>
-                    name.EndsWith(".json", StringComparison.OrdinalIgnoreCase) &&
-                    name.Contains(".Languages."))
-                .ToArray();
+            string[] resources = assembly.GetManifestResourceNames().Where(name => name.EndsWith(".json", StringComparison.OrdinalIgnoreCase) && name.Contains(".Languages.")).ToArray();
 
             foreach (string resourceName in resources)
             {
-                string fileName = resourceName.Substring(
-                    resourceName.LastIndexOf('.') - 0);
-
-                // 从资源名中提取语言代码，例如 zh-CN.json。
-                // 假设资源名格式为 NetWinI18n.Languages.zh-CN.json。
                 const string marker = ".Languages.";
-                int index = resourceName.IndexOf(
-                    marker,
-                    StringComparison.OrdinalIgnoreCase);
+
+                int index = resourceName.IndexOf(marker, StringComparison.OrdinalIgnoreCase);
 
                 if (index < 0)
                     continue;
 
-                fileName = resourceName.Substring(index + marker.Length);
+                string fileName = resourceName.Substring(index + marker.Length);
 
-                string destinationPath = Path.Combine(
-                    languageDirectory,
-                    fileName);
+                string destinationPath = Path.Combine(languageDirectory, fileName);
 
                 if (File.Exists(destinationPath))
                     continue;
@@ -133,16 +117,32 @@ namespace NetWinI18n
                     if (stream == null)
                         continue;
 
-                    using (FileStream file = new FileStream(
-                        destinationPath,
-                        FileMode.CreateNew,
-                        FileAccess.Write,
-                        FileShare.None))
+                    using (FileStream file = new FileStream(destinationPath, FileMode.Create, FileAccess.Write, FileShare.None))
                     {
                         stream.CopyTo(file);
                     }
                 }
             }
+
+            //自动设置语言目录
+            LocalizationManager.SetLanguageDirectory(languageDirectory);
+        }
+
+        /// <summary>
+        /// 刷新语言缓存。
+        /// 修改外部 JSON 文件后调用。
+        /// </summary>
+        public static void RefreshLanguageCache()
+        {
+            LocalizationManager.RefreshLanguageCache();
+        }
+
+        /// <summary>
+        /// 获取所有可用语言。
+        /// </summary>
+        public static List<string> GetAvailableLanguages()
+        {
+            return LocalizationManager.GetAvailableLanguages();
         }
     }
 }
