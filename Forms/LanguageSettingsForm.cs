@@ -11,14 +11,19 @@ namespace NetWinI18n.Forms
 {
     /// <summary>
     /// WinForms language settings window.
-    /// Automatically discovers language JSON files in the Languages directory.
+    /// Blue modern UI theme.
     /// </summary>
     public class LanguageSettingsForm : Form
     {
+        #region Fields
+
         private readonly ListBox _languageList;
+
         private readonly Label _titleLabel;
         private readonly Label _descriptionLabel;
         private readonly Label _currentLanguageLabel;
+        private readonly Label _listTitleLabel;
+
         private readonly Button _applyButton;
         private readonly Button _cancelButton;
 
@@ -26,14 +31,30 @@ namespace NetWinI18n.Forms
 
         private readonly string _settingsFile;
 
+        // Theme colors
+        private static readonly Color PrimaryBlue = Color.FromArgb(23, 105, 194);
+
+        private static readonly Color DarkBlue = Color.FromArgb(18, 59, 112);
+
+        private static readonly Color LightBlue = Color.FromArgb(231, 242, 255);
+
+        private static readonly Color BackgroundColor = Color.FromArgb(243, 247, 252);
+
+        private static readonly Color TextColor = Color.FromArgb(39, 57, 79);
+
+        private static readonly Color SecondaryTextColor = Color.FromArgb(112, 132, 155);
+
+        #endregion Fields
+
+        #region Properties
+
         /// <summary>
         /// Gets the language selected by the user.
         /// </summary>
         public string SelectedLanguage { get; private set; }
 
         /// <summary>
-        /// Directory containing language JSON files.
-        /// Defaults to the Languages directory beside the application.
+        /// Language JSON directory.
         /// </summary>
         public static string LanguageDirectory
         {
@@ -43,132 +64,46 @@ namespace NetWinI18n.Forms
             }
         }
 
-        /// <summary>
-        /// Initializes the language settings window.
-        /// </summary>
+        #endregion Properties
+
+        #region Constructor
+
         public LanguageSettingsForm()
         {
             Lang.InitializeLanguageFiles();
             _settingsFile = Path.Combine(Application.LocalUserAppDataPath, "language.txt");
 
-            Text = "语言设置 / Language Settings";
+            // Form settings
+            Text = "Language Settings";
             StartPosition = FormStartPosition.CenterParent;
             FormBorderStyle = FormBorderStyle.FixedDialog;
+
             MaximizeBox = false;
             MinimizeBox = false;
             ShowInTaskbar = false;
-            ClientSize = new Size(510, 360);
+
+            ClientSize = new Size(560, 460);
+
             Font = new Font("Microsoft YaHei UI", 9F);
-            BackColor = Color.FromArgb(243, 247, 251);
 
-            // Header
-            Panel header = new Panel
-            {
-                Dock = DockStyle.Top,
-                Height = 76,
-                BackColor = Color.FromArgb(18, 43, 73)
-            };
+            BackColor = BackgroundColor;
 
-            _titleLabel = new Label
-            {
-                Text = "语言设置 / Language Settings",
-                ForeColor = Color.White,
-                Font = new Font(
-                    "Microsoft YaHei UI",
-                    14F,
-                    FontStyle.Bold),
-                Location = new Point(22, 12),
-                AutoSize = true
-            };
+            // Build UI
+            _titleLabel = new Label();
+            _descriptionLabel = new Label();
+            _currentLanguageLabel = new Label();
+            _listTitleLabel = new Label();
 
-            _descriptionLabel = new Label
-            {
-                Text = "选择你希望使用的界面语言",
-                ForeColor = Color.FromArgb(190, 211, 232),
-                Location = new Point(24, 45),
-                AutoSize = true
-            };
+            _languageList = new ListBox();
 
-            header.Controls.Add(_titleLabel);
-            header.Controls.Add(_descriptionLabel);
+            _applyButton = new Button();
+            _cancelButton = new Button();
 
-            // Available languages title
-            Label listTitle = new Label
-            {
-                Text = "可用语言 / Available Languages",
-                Location = new Point(24, 94),
-                AutoSize = true,
-                ForeColor = Color.FromArgb(45, 64, 84),
-                Font = new Font(
-                    "Microsoft YaHei UI",
-                    9F,
-                    FontStyle.Bold)
-            };
+            InitializeHeader();
+            InitializeContent();
+            InitializeFooter();
 
-            // Language list
-            _languageList = new ListBox
-            {
-                Location = new Point(24, 120),
-                Size = new Size(462, 145),
-                Font = new Font("Microsoft YaHei UI", 10F),
-                BorderStyle = BorderStyle.FixedSingle,
-                IntegralHeight = false,
-                DrawMode = DrawMode.OwnerDrawFixed,
-                ItemHeight = 34,
-                BackColor = Color.White
-            };
-
-            _languageList.DrawItem += LanguageList_DrawItem;
-            _languageList.SelectedIndexChanged +=
-                LanguageList_SelectedIndexChanged;
-
-            _currentLanguageLabel = new Label
-            {
-                Location = new Point(25, 274),
-                Size = new Size(460, 22),
-                ForeColor = Color.FromArgb(65, 91, 117),
-                Text = "当前语言 / Current language"
-            };
-
-            // Apply button
-            _applyButton = new Button
-            {
-                Text = "应用 / Apply",
-                Size = new Size(120, 34),
-                Location = new Point(235, 310),
-                FlatStyle = FlatStyle.Flat,
-                BackColor = Color.FromArgb(22, 121, 207),
-                ForeColor = Color.White,
-                UseVisualStyleBackColor = false
-            };
-
-            _applyButton.FlatAppearance.BorderSize = 0;
-            _applyButton.Click += ApplyButton_Click;
-
-            // Cancel button
-            _cancelButton = new Button
-            {
-                Text = "取消 / Cancel",
-                Size = new Size(120, 34),
-                Location = new Point(366, 310),
-                FlatStyle = FlatStyle.Flat,
-                BackColor = Color.White,
-                ForeColor = Color.FromArgb(45, 64, 84)
-            };
-
-            _cancelButton.Click += CancelButton_Click;
-
-            Controls.Add(header);
-            Controls.Add(listTitle);
-            Controls.Add(_languageList);
-            Controls.Add(_currentLanguageLabel);
-            Controls.Add(_applyButton);
-            Controls.Add(_cancelButton);
-
-            AcceptButton = _applyButton;
-            CancelButton = _cancelButton;
-
-            // Load available languages after initializing controls.
+            // Load available languages
             LoadLanguages();
 
             foreach (LanguageItem item in _languages)
@@ -179,12 +114,211 @@ namespace NetWinI18n.Forms
             _applyButton.Enabled = _languageList.Items.Count > 0;
 
             SelectCurrentLanguage();
+
+            AcceptButton = _applyButton;
+            CancelButton = _cancelButton;
+        }
+
+        #endregion Constructor
+
+        #region UI Initialization
+
+        /// <summary>
+        /// Header section.
+        /// </summary>
+        private void InitializeHeader()
+        {
+            Panel header = new Panel
+            {
+                Dock = DockStyle.Top,
+                Height = 100,
+                BackColor = DarkBlue
+            };
+
+            // Main title
+            _titleLabel.Text = "语言设置 / Language Settings";
+
+            _titleLabel.ForeColor = Color.White;
+
+            _titleLabel.Font = new Font("Microsoft YaHei UI", 15F, FontStyle.Bold);
+
+            _titleLabel.Location = new Point(25, 17);
+            _titleLabel.AutoSize = true;
+
+            // Description
+            _descriptionLabel.Text = "选择你希望使用的界面语言，切换后立即生效。";
+
+            _descriptionLabel.ForeColor = Color.FromArgb(195, 216, 241);
+
+            _descriptionLabel.Font = new Font("Microsoft YaHei UI", 9F);
+
+            _descriptionLabel.Location = new Point(27, 58);
+
+            _descriptionLabel.AutoSize = true;
+
+            header.Controls.Add(_titleLabel);
+            header.Controls.Add(_descriptionLabel);
+
+            Controls.Add(header);
         }
 
         /// <summary>
-        /// Scans the Languages directory for valid language JSON files.
-        /// The file name without extension is used as the language code.
-        /// Example: Languages/ja-JP.json.
+        /// Main content section.
+        /// </summary>
+        private void InitializeContent()
+        {
+            // Card panel
+            Panel card = new Panel
+            {
+                Location = new Point(22, 119),
+                Size = new Size(516, 267),
+                BackColor = Color.White
+            };
+
+            card.Paint += delegate (object sender, PaintEventArgs e)
+            {
+                using (Pen pen = new Pen(Color.FromArgb(222, 232, 244)))
+                {
+                    e.Graphics.DrawRectangle(pen, 0, 0, card.Width - 1, card.Height - 1);
+                }
+            };
+
+            // List title
+            _listTitleLabel.Text = "可用语言 / Available Languages";
+
+            _listTitleLabel.Location = new Point(18, 17);
+
+            _listTitleLabel.AutoSize = true;
+
+            _listTitleLabel.ForeColor = TextColor;
+
+            _listTitleLabel.Font = new Font("Microsoft YaHei UI", 10F, FontStyle.Bold);
+
+            // Language list
+            _languageList.Location = new Point(18, 48);
+
+            _languageList.Size = new Size(480, 157);
+
+            _languageList.Font = new Font("Microsoft YaHei UI", 10F);
+
+            _languageList.BorderStyle = BorderStyle.None;
+
+            _languageList.IntegralHeight = false;
+
+            _languageList.DrawMode = DrawMode.OwnerDrawFixed;
+
+            _languageList.ItemHeight = 42;
+
+            _languageList.BackColor = Color.White;
+
+            _languageList.ForeColor = TextColor;
+
+            _languageList.DrawItem += LanguageList_DrawItem;
+
+            _languageList.SelectedIndexChanged += LanguageList_SelectedIndexChanged;
+
+            // Current language
+            _currentLanguageLabel.Location = new Point(20, 218);
+
+            _currentLanguageLabel.Size = new Size(475, 28);
+
+            _currentLanguageLabel.ForeColor = SecondaryTextColor;
+
+            _currentLanguageLabel.Font = new Font("Microsoft YaHei UI", 9F);
+
+            _currentLanguageLabel.Text = "当前语言 / Current Language";
+
+            card.Controls.Add(_listTitleLabel);
+            card.Controls.Add(_languageList);
+            card.Controls.Add(_currentLanguageLabel);
+
+            Controls.Add(card);
+        }
+
+        /// <summary>
+        /// Footer section.
+        /// </summary>
+        private void InitializeFooter()
+        {
+            Panel footer = new Panel
+            {
+                Dock = DockStyle.Bottom,
+                Height = 65,
+                BackColor = Color.White
+            };
+
+            footer.Paint += delegate (object sender, PaintEventArgs e)
+            {
+                using (Pen pen = new Pen(Color.FromArgb(224, 232, 241)))
+                {
+                    e.Graphics.DrawLine(pen, 0, 0, footer.Width, 0);
+                }
+            };
+
+            // Apply button
+            _applyButton.Text = "应用语言 / Apply";
+
+            _applyButton.Size = new Size(132, 37);
+
+            _applyButton.Location = new Point(270, 14);
+
+            _applyButton.FlatStyle = FlatStyle.Flat;
+
+            _applyButton.FlatAppearance.BorderSize = 0;
+
+            _applyButton.FlatAppearance.MouseOverBackColor = Color.FromArgb(37, 125, 213);
+
+            _applyButton.FlatAppearance.MouseDownBackColor = Color.FromArgb(15, 82, 158);
+
+            _applyButton.BackColor = PrimaryBlue;
+
+            _applyButton.ForeColor = Color.White;
+
+            _applyButton.Font = new Font("Microsoft YaHei UI", 9F, FontStyle.Bold);
+
+            _applyButton.Cursor = Cursors.Hand;
+
+            _applyButton.UseVisualStyleBackColor = false;
+
+            _applyButton.Click += ApplyButton_Click;
+
+            // Cancel button
+            _cancelButton.Text = "取消 / Cancel";
+
+            _cancelButton.Size = new Size(112, 37);
+
+            _cancelButton.Location = new Point(414, 14);
+
+            _cancelButton.FlatStyle = FlatStyle.Flat;
+
+            _cancelButton.FlatAppearance.BorderSize = 1;
+
+            _cancelButton.FlatAppearance.BorderColor = Color.FromArgb(210, 222, 236);
+
+            _cancelButton.FlatAppearance.MouseOverBackColor = LightBlue;
+
+            _cancelButton.BackColor = Color.White;
+
+            _cancelButton.ForeColor = TextColor;
+
+            _cancelButton.Font = new Font("Microsoft YaHei UI", 9F);
+
+            _cancelButton.Cursor = Cursors.Hand;
+
+            _cancelButton.Click += CancelButton_Click;
+
+            footer.Controls.Add(_applyButton);
+            footer.Controls.Add(_cancelButton);
+
+            Controls.Add(footer);
+        }
+
+        #endregion UI Initialization
+
+        #region Load Languages
+
+        /// <summary>
+        /// Scans the Languages directory.
         /// </summary>
         private void LoadLanguages()
         {
@@ -217,23 +351,17 @@ namespace NetWinI18n.Forms
 
                 try
                 {
-                    // Validate the language code.
                     CultureInfo culture = CultureInfo.GetCultureInfo(code);
 
-                    // Validate that the file contains valid JSON.
                     string json = File.ReadAllText(file, Encoding.UTF8);
 
                     JObject.Parse(json);
 
                     _languages.Add(new LanguageItem(code, culture.NativeName, culture.EnglishName));
                 }
-                catch (CultureNotFoundException)
+                catch
                 {
-                    // Ignore files whose names are not valid culture codes.
-                }
-                catch (Exception)
-                {
-                    // Ignore malformed or unreadable language files.
+                    // Ignore invalid language files.
                 }
             }
 
@@ -243,8 +371,12 @@ namespace NetWinI18n.Forms
             });
         }
 
+        #endregion Load Languages
+
+        #region Select Language
+
         /// <summary>
-        /// Selects the currently active language, if available.
+        /// Selects the current language.
         /// </summary>
         private void SelectCurrentLanguage()
         {
@@ -254,8 +386,7 @@ namespace NetWinI18n.Forms
             {
                 LanguageItem item = _languageList.Items[i] as LanguageItem;
 
-                if (item != null &&
-                    string.Equals(item.Code, current, StringComparison.OrdinalIgnoreCase))
+                if (item != null && string.Equals(item.Code, current, StringComparison.OrdinalIgnoreCase))
                 {
                     _languageList.SelectedIndex = i;
                     return;
@@ -272,6 +403,9 @@ namespace NetWinI18n.Forms
             }
         }
 
+        /// <summary>
+        /// Language selection changed.
+        /// </summary>
         private void LanguageList_SelectedIndexChanged(object sender, EventArgs e)
         {
             LanguageItem item = _languageList.SelectedItem as LanguageItem;
@@ -281,13 +415,13 @@ namespace NetWinI18n.Forms
 
             _currentLanguageLabel.Text = "选择语言 / Selected: " + item.NativeName + " (" + item.Code + ")";
 
-            // 切换当前语言
+            // Switch language
             Lang.SetLanguage(item.Code);
 
-            // 刷新语言设置窗体
+            // Refresh current form
             LanguageHelper.Apply(this);
 
-            // 自动获取并刷新其他已打开的窗体
+            // Refresh other open forms
             foreach (Form form in Application.OpenForms)
             {
                 if (form != this && !(form is LanguageSettingsForm))
@@ -296,12 +430,21 @@ namespace NetWinI18n.Forms
                 }
             }
 
-            // 保存语言设置
+            // Save selected language
             SaveLanguage(item.Code);
 
             SelectedLanguage = item.Code;
+
+            _languageList.Invalidate();
         }
 
+        #endregion Select Language
+
+        #region Draw Language List
+
+        /// <summary>
+        /// Custom language list rendering.
+        /// </summary>
         private void LanguageList_DrawItem(object sender, DrawItemEventArgs e)
         {
             if (e.Index < 0 || e.Index >= _languageList.Items.Count)
@@ -314,51 +457,51 @@ namespace NetWinI18n.Forms
 
             bool selected = (e.State & DrawItemState.Selected) == DrawItemState.Selected;
 
-            Color background = selected
-                ? Color.FromArgb(224, 239, 255)
-                : Color.White;
+            Rectangle bounds = e.Bounds;
 
-            Color foreground = Color.FromArgb(38, 57, 77);
+            Color background = selected ? LightBlue : Color.White;
+
+            Color foreground = selected ? DarkBlue : TextColor;
 
             using (SolidBrush brush = new SolidBrush(background))
             {
-                e.Graphics.FillRectangle(brush, e.Bounds);
+                e.Graphics.FillRectangle(brush, bounds);
             }
 
+            // Selected indicator
             if (selected)
             {
-                using (SolidBrush brush = new SolidBrush(
-                    Color.FromArgb(22, 121, 207)))
+                using (SolidBrush brush = new SolidBrush(PrimaryBlue))
                 {
-                    e.Graphics.FillRectangle(
-                        brush,
-                        e.Bounds.X,
-                        e.Bounds.Y,
-                        4,
-                        e.Bounds.Height);
+                    e.Graphics.FillRectangle(brush, bounds.X, bounds.Y + 5, 4, bounds.Height - 10);
                 }
             }
 
-            string displayText =
-                item.NativeName + "    " + item.EnglishName;
+            // Language native name
+            Rectangle nativeRect = new Rectangle(bounds.X + 17, bounds.Y + 3, bounds.Width - 35, 20);
 
-            TextRenderer.DrawText(
-                e.Graphics,
-                displayText,
-                _languageList.Font,
-                new Rectangle(
-                    e.Bounds.X + 14,
-                    e.Bounds.Y,
-                    e.Bounds.Width - 20,
-                    e.Bounds.Height),
-                foreground,
-                TextFormatFlags.VerticalCenter |
-                TextFormatFlags.Left |
-                TextFormatFlags.EndEllipsis);
+            using (Font nativeFont = new Font("Microsoft YaHei UI", 9.5F, selected ? FontStyle.Bold : FontStyle.Regular))
+            {
+                TextRenderer.DrawText(e.Graphics, item.NativeName, nativeFont, nativeRect, foreground, TextFormatFlags.Left | TextFormatFlags.VerticalCenter | TextFormatFlags.EndEllipsis);
+            }
+
+            // English name and language code
+            Rectangle englishRect = new Rectangle(bounds.X + 17, bounds.Y + 21, bounds.Width - 35, 17);
+
+            string detail = item.EnglishName + "  ·  " + item.Code;
+
+            TextRenderer.DrawText(e.Graphics, detail, new Font("Segoe UI", 8F), englishRect, SecondaryTextColor, TextFormatFlags.Left | TextFormatFlags.VerticalCenter | TextFormatFlags.EndEllipsis);
 
             e.DrawFocusRectangle();
         }
 
+        #endregion Draw Language List
+
+        #region Apply / Cancel
+
+        /// <summary>
+        /// Apply language settings.
+        /// </summary>
         private void ApplyButton_Click(object sender, EventArgs e)
         {
             LanguageItem item = _languageList.SelectedItem as LanguageItem;
@@ -381,14 +524,16 @@ namespace NetWinI18n.Forms
 
             try
             {
-                // The Lang implementation must support external JSON files.
                 Lang.SetLanguage(item.Code);
 
                 SaveLanguage(item.Code);
+
                 LanguageHelper.Apply(this);
+
                 SelectedLanguage = item.Code;
 
                 DialogResult = DialogResult.OK;
+
                 Close();
             }
             catch (Exception ex)
@@ -397,21 +542,27 @@ namespace NetWinI18n.Forms
             }
         }
 
+        /// <summary>
+        /// Cancel.
+        /// </summary>
         private void CancelButton_Click(object sender, EventArgs e)
         {
             DialogResult = DialogResult.Cancel;
             Close();
         }
 
+        #endregion Apply / Cancel
+
+        #region Save / Restore
+
         /// <summary>
-        /// Saves the selected language code.
+        /// Saves language settings.
         /// </summary>
         private void SaveLanguage(string language)
         {
             string directory = Path.GetDirectoryName(_settingsFile);
 
-            if (!string.IsNullOrEmpty(directory) &&
-                !Directory.Exists(directory))
+            if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
             {
                 Directory.CreateDirectory(directory);
             }
@@ -420,7 +571,7 @@ namespace NetWinI18n.Forms
         }
 
         /// <summary>
-        /// Restores the saved language.
+        /// Restores saved language.
         /// Call before creating the main form.
         /// </summary>
         public static void LoadSavedLanguage()
@@ -437,18 +588,12 @@ namespace NetWinI18n.Forms
                 if (string.IsNullOrWhiteSpace(language))
                     return;
 
-                // Only restore a language that is currently available.
-                string languageFile = Path.Combine(
-                    LanguageDirectory,
-                    language + ".json");
+                string languageFile = Path.Combine(LanguageDirectory, language + ".json");
 
                 if (!File.Exists(languageFile))
                     return;
 
-                // Validate JSON before applying the language.
-                string json = File.ReadAllText(
-                    languageFile,
-                    Encoding.UTF8);
+                string json = File.ReadAllText(languageFile, Encoding.UTF8);
 
                 JObject.Parse(json);
 
@@ -456,12 +601,16 @@ namespace NetWinI18n.Forms
             }
             catch
             {
-                // Ignore invalid or inaccessible saved settings.
+                // Ignore invalid saved settings.
             }
         }
 
+        #endregion Save / Restore
+
+        #region Language Item
+
         /// <summary>
-        /// Represents a language discovered from a JSON file.
+        /// Language item model.
         /// </summary>
         private sealed class LanguageItem
         {
@@ -471,10 +620,7 @@ namespace NetWinI18n.Forms
 
             public string EnglishName { get; private set; }
 
-            public LanguageItem(
-                string code,
-                string nativeName,
-                string englishName)
+            public LanguageItem(string code, string nativeName, string englishName)
             {
                 Code = code;
                 NativeName = nativeName;
@@ -486,5 +632,7 @@ namespace NetWinI18n.Forms
                 return NativeName;
             }
         }
+
+        #endregion Language Item
     }
 }
