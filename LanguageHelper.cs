@@ -66,21 +66,44 @@ namespace NetWinI18n
         /// </summary>
         private static void ApplyControlText(Control control)
         {
-            if (control.Tag == null)
-                return;
-
-            string key = control.Tag.ToString()?.Trim() ?? string.Empty;
-
-            if (string.IsNullOrWhiteSpace(key))
-                return;
-
-            try
+            if (control.Tag != null)
             {
-                control.Text = Lang.T(key);
+                string key = control.Tag.ToString()?.Trim() ?? string.Empty;
+
+                if (!string.IsNullOrWhiteSpace(key))
+                {
+                    try
+                    {
+                        control.Text = Lang.T(key);
+                    }
+                    catch
+                    {
+                        // 多语言翻译失败时，不影响其他控件。
+                    }
+                }
             }
-            catch
+
+            // DataGridView 的列不是子 Control，需要单独处理
+            if (control is DataGridView dataGridView)
             {
-                // 多语言翻译失败时，不影响其他控件。
+                foreach (DataGridViewColumn column in dataGridView.Columns)
+                {
+                    if (column.Tag == null)
+                        continue;
+
+                    string key = column.Tag.ToString()?.Trim() ?? string.Empty;
+                    if (string.IsNullOrWhiteSpace(key))
+                        continue;
+
+                    try
+                    {
+                        column.HeaderText = Lang.T(key);
+                    }
+                    catch
+                    {
+                        // 单个列标题翻译失败时，不影响其他列。
+                    }
+                }
             }
         }
 

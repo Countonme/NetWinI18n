@@ -345,7 +345,7 @@ The event notifies subscribers; it does not automatically translate every open f
 
 ## License
 
-Specify the license for your package before publishing it to NuGet. Add a `LICENSE` file to your repository if applicable.
+see License file for details.
 
 ## Author
 
